@@ -8,6 +8,8 @@ public class SphereMovement : Player.MonoBehaviour, Core.IResetable
     private Transform CameraTransform;
     [HideInInspector]
     new public Rigidbody rigidbody;
+    [HideInInspector]
+    public SphereCollider SphereCollider;
     #endregion
 
     #region Members
@@ -15,6 +17,8 @@ public class SphereMovement : Player.MonoBehaviour, Core.IResetable
 
     public float MovementSpeed = 5.0f;
     public float JumpHeight = 5.0f;
+    public int AllowedJumpCount = 2;
+    public int CurrentJumpCount = 0;
     public Vector3 MaximumUpVelocity = new Vector3(7.5f, 5000.0f, 7.5f);
     public Vector3 MaximumDownVelocity = new Vector3(-7.5f, -150.0f, -7.5f);
     public Vector3 VelocityUpModifier = new Vector3(0.99f, 0.99f, 0.99f);
@@ -60,7 +64,7 @@ public class SphereMovement : Player.MonoBehaviour, Core.IResetable
 
         CameraTransform = PlayerData.GameObject.transform.Find("Camera");
         rigidbody = GetComponent<Rigidbody>();
-
+        SphereCollider = (SphereCollider)GetComponent<Collider>();
         IsInit = true;
     }
 
@@ -104,9 +108,17 @@ public class SphereMovement : Player.MonoBehaviour, Core.IResetable
         {
             rigidbody.AddForce(Right * MovementSpeed * Input.GetAxisRaw("Movement_Horizontal") * Time.deltaTime);
         }
-        if (Input.GetButtonDown("Movement_Jump"))
+
+        RaycastHit raycastHit;
+        if (Physics.Raycast(transform.position, Vector3.down, out raycastHit, SphereCollider.radius + 0.02f) && rigidbody.velocity.y <= 0.0f)
+        {
+            CurrentJumpCount = 0;
+        }
+
+        if (Input.GetButtonDown("Movement_Jump") && CurrentJumpCount < AllowedJumpCount)
         {
             rigidbody.AddForce(Up * JumpHeight);
+            CurrentJumpCount++;
         }
 
         rigidbody.velocity = Vector3.Max(Vector3.Min(new Vector3(
